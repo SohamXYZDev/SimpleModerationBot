@@ -10,8 +10,7 @@ function initializeAntiSpam(client) {
         // Ignore bots and system messages
         if (message.author.bot || message.system) return;
         
-        // Ignore messages from members with moderation permissions
-        if (message.member && message.member.permissions.has('ModerateMembers')) return;
+        // Note: Removed permission check - anti-spam now works on everyone including admins
         
         const userId = message.author.id;
         const currentTime = Date.now();
@@ -126,37 +125,52 @@ async function handleSpamDetection(message, triggerType, count, options = {}) {
         // Add user to timeout set to prevent duplicate actions
         userTimeouts.add(userId);
         
-        // Timeout the user with appropriate duration
-        await message.member.timeout(timeoutDuration, `Auto-moderation: ${triggerType} (${count} violations)`);
+        // Timeout the user with appropriate duration (skip if user can't be timed out)
+        let timeoutSuccess = false;
+        try {
+            await message.member.timeout(timeoutDuration, `Auto-moderation: ${triggerType} (${count} violations)`);
+            timeoutSuccess = true;
+            console.log(`⏰ Successfully timed out ${message.author.tag} for ${timeoutDuration / 1000}s`);
+        } catch (timeoutError) {
+            console.log(`⚠️ Could not timeout ${message.author.tag}: ${timeoutError.message} (probably admin/higher role)`);
+            // Continue with message deletion even if timeout fails
+        }
         
         // Enhanced message deletion - always delete past 5 messages for all spam types
         try {
             const userHistory = userMessageHistory.get(userId) || [];
             const messagesToDelete = userHistory.slice(-5); // Last 5 messages
             
+            console.log(`🗑️ Attempting to delete ${messagesToDelete.length} messages for user ${message.author.tag}`);
+            
             for (const msgData of messagesToDelete) {
                 try {
                     const channel = message.guild.channels.cache.get(msgData.channelId);
                     if (channel) {
-                        const messages = await channel.messages.fetch({ limit: 50 });
+                        // Fetch more messages to ensure we find the target
+                        const messages = await channel.messages.fetch({ limit: 100 });
                         const userMsg = messages.find(m => 
                             m.author.id === userId && 
-                            Math.abs(m.createdTimestamp - msgData.timestamp) < 10000 // Increased window to 10 seconds
+                            Math.abs(m.createdTimestamp - msgData.timestamp) < 15000 // Increased window to 15 seconds
                         );
                         if (userMsg) {
                             await userMsg.delete();
+                            console.log(`✅ Deleted message in #${channel.name}`);
+                        } else {
+                            console.log(`⚠️ Could not find message to delete in #${channel.name}`);
                         }
                     }
                 } catch (deleteError) {
-                    console.log(`Could not delete message: ${deleteError.message}`);
+                    console.log(`❌ Could not delete message: ${deleteError.message}`);
                 }
             }
             
             // Also try to delete the triggering message
             try {
                 await message.delete();
+                console.log(`✅ Deleted triggering message`);
             } catch (deleteError) {
-                console.log(`Could not delete triggering message: ${deleteError.message}`);
+                console.log(`❌ Could not delete triggering message: ${deleteError.message}`);
             }
             
         } catch (bulkDeleteError) {
@@ -164,13 +178,15 @@ async function handleSpamDetection(message, triggerType, count, options = {}) {
         }
         
         // Format timeout duration for logging
-        const timeoutText = timeoutDuration === 60000 ? '1 minute timeout' : '7-day timeout';
+        const timeoutText = timeoutSuccess 
+            ? (timeoutDuration === 60000 ? '1 minute timeout applied' : '7-day timeout applied')
+            : 'Messages deleted (timeout failed - user has higher permissions)';
         const channelContext = sameChannel ? ' (same channel)' : ' (cross-channel)';
         
         // Log the action
         await logAction('spam', {
             user: message.author,
-            action: `${timeoutText} applied`,
+            action: timeoutText,
             messageCount: count,
             timeWindow: `${config.spam.timeWindow / 1000}s`,
             channel: message.channel,
@@ -186,7 +202,9 @@ async function handleSpamDetection(message, triggerType, count, options = {}) {
             userTimeouts.delete(userId);
         }, cooldownTime);
         
-        const actionText = timeoutDuration === 60000 ? 'timed out for 1 minute' : 'timed out for 7 days';
+        const actionText = timeoutSuccess 
+            ? (timeoutDuration === 60000 ? 'timed out for 1 minute' : 'timed out for 7 days')
+            : 'had messages deleted (timeout failed)';
         console.log(`🔨 Auto-${actionText} user ${message.author.tag} for ${triggerType}${channelContext}`);
         
     } catch (error) {

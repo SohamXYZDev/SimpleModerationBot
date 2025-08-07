@@ -31,7 +31,7 @@ module.exports = {
                 .addFields(
                     { name: 'Bot Name', value: config.botName, inline: true },
                     { name: 'Version', value: config.botVersion, inline: true },
-                    { name: 'Author', value: config.botAuthor || 'Not specified', inline: true },
+                    { name: 'Programmed By', value: config.botAuthor || 'Not specified', inline: true },
                     { name: 'Uptime', value: uptimeString, inline: true },
                     { name: 'Ping', value: `${Math.round(client.ws.ping)}ms`, inline: true },
                     { name: 'Memory Usage', value: `${memUsed}MB / ${memTotal}MB`, inline: true },
