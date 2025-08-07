@@ -1,4 +1,4 @@
-# MMM Moderation Bot
+# A Simple (Yet Profound) Moderation Discord Bot
 
 An advanced Discord moderation bot with comprehensive anti-spam protection, auto-moderation features, and detailed logging capabilities.
 
@@ -72,7 +72,7 @@ An advanced Discord moderation bot with comprehensive anti-spam protection, auto
    GUILD_ID=your_guild_id_here
 
    # Optional: Customize bot identity
-   BOT_NAME=MMM Moderation Bot
+   BOT_NAME=Moderation Bot
    BOT_AUTHOR=Your Name Here
    ```
 
@@ -157,7 +157,7 @@ The anti-spam system can be configured through environment variables:
 ## File Structure
 
 ```
-MMMModerationBot/
+SimpleModerationBot/
 ├── commands/
 │   ├── moderation/          # Moderation commands
 │   │   ├── ban.js
