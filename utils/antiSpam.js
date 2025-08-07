@@ -147,10 +147,11 @@ async function handleSpamDetection(message, triggerType, count, options = {}) {
             );
             
             let totalDeleted = 0;
+            const maxDeletions = 10; // Maximum messages to delete across all channels
             
             // Process each channel (with rate limiting)
             const channelArray = Array.from(textChannels.values());
-            for (let i = 0; i < channelArray.length; i++) {
+            for (let i = 0; i < channelArray.length && totalDeleted < maxDeletions; i++) {
                 const channel = channelArray[i];
                 try {
                     // Fetch recent messages (last 100)
@@ -165,21 +166,25 @@ async function handleSpamDetection(message, triggerType, count, options = {}) {
                     );
                     
                     if (userMessages.size > 0) {
-                        if (userMessages.size === 1) {
+                        // Limit to remaining deletion quota
+                        const remainingDeletions = maxDeletions - totalDeleted;
+                        const messagesToDelete = userMessages.first(Math.min(userMessages.size, remainingDeletions));
+                        
+                        if (messagesToDelete.length === 1) {
                             // Single message - use regular delete
-                            await userMessages.first().delete();
+                            await messagesToDelete[0].delete();
                             totalDeleted += 1;
                             console.log(`✅ Deleted 1 message in #${channel.name}`);
-                        } else {
+                        } else if (messagesToDelete.length > 1) {
                             // Multiple messages - use bulk delete
-                            const deleted = await channel.bulkDelete(userMessages, true);
+                            const deleted = await channel.bulkDelete(messagesToDelete, true);
                             totalDeleted += deleted.size;
                             console.log(`✅ Bulk deleted ${deleted.size} messages in #${channel.name}`);
                         }
                     }
                     
-                    // Small delay to prevent rate limiting (only if more channels to process)
-                    if (i < channelArray.length - 1 && totalDeleted > 0) {
+                    // Small delay to prevent rate limiting (only if more channels to process and not at max deletions)
+                    if (i < channelArray.length - 1 && totalDeleted > 0 && totalDeleted < maxDeletions) {
                         await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay
                     }
                     
@@ -188,7 +193,7 @@ async function handleSpamDetection(message, triggerType, count, options = {}) {
                 }
             }
             
-            console.log(`🎯 Total messages deleted: ${totalDeleted}`);
+            console.log(`🎯 Total messages deleted: ${totalDeleted} (max: ${maxDeletions})`);
             
         } catch (bulkDeleteError) {
             console.log(`❌ Error in bulk delete process: ${bulkDeleteError.message}`);
@@ -213,12 +218,27 @@ async function handleSpamDetection(message, triggerType, count, options = {}) {
         // Clear user history
         userMessageHistory.delete(userId);
         
+        // Check if user has admin permissions (no cooldown for admins)
+        const isAdmin = message.member && (
+            message.member.permissions.has('Administrator') || 
+            message.member.permissions.has('ManageGuild') ||
+            message.member.permissions.has('ManageMessages')
+        );
+        
         // Remove from timeout set after shorter time to allow continued detection
-        const cooldownTime = 5000; // 5 seconds cooldown regardless of timeout duration
-        setTimeout(() => {
+        // No cooldown for admins, 5 seconds for regular users
+        const cooldownTime = isAdmin ? 0 : 5000;
+        
+        if (cooldownTime > 0) {
+            setTimeout(() => {
+                userTimeouts.delete(userId);
+                console.log(`🔄 Cooldown expired for ${message.author.tag} - spam detection re-enabled`);
+            }, cooldownTime);
+        } else {
+            // Immediate cooldown removal for admins
             userTimeouts.delete(userId);
-            console.log(`🔄 Cooldown expired for ${message.author.tag} - spam detection re-enabled`);
-        }, cooldownTime);
+            console.log(`🔄 No cooldown for admin ${message.author.tag} - spam detection remains active`);
+        }
         
         const actionText = timeoutSuccess 
             ? (timeoutDuration === 60000 ? 'timed out for 1 minute' : 'timed out for 7 days')

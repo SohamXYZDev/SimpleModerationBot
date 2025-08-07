@@ -70,7 +70,7 @@ module.exports = {
         
         embed.addFields({
             name: 'Expected Result',
-            value: '• All recent messages (15 min) will be bulk deleted across ALL channels\n• User will be timed out (if possible)\n• Action will be logged\n• 5 second cooldown before next detection',
+            value: '• Up to 10 recent messages (15 min) will be bulk deleted across ALL channels\n• User will be timed out (if possible)\n• Action will be logged\n• 5 second cooldown before next detection (no cooldown for admins)',
             inline: false
         });
         
