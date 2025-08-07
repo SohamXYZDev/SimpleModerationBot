@@ -67,7 +67,7 @@ async function checkForSpam(message, userHistory) {
     
     // Check message frequency
     if (userHistory.length >= config.spam.messageLimit) {
-        await handleSpamDetection(message, 'message_frequency', userHistory.length);
+        await handleSpamDetection(message, 'message_frequency', userHistory.length, { timeoutDuration: config.spam.timeoutDuration });
         return;
     }
     
@@ -79,7 +79,14 @@ async function checkForSpam(message, userHistory) {
         ).length;
         
         if (identicalCount >= 3) {
-            await handleSpamDetection(message, 'identical_content', identicalCount);
+            // Check if all identical messages are in the same channel
+            const identicalMessages = recentMessages.filter(msg => msg.content === message.content);
+            const sameChannel = identicalMessages.every(msg => msg.channelId === message.channel.id);
+            
+            await handleSpamDetection(message, 'identical_content', identicalCount, { 
+                timeoutDuration: sameChannel ? 60000 : config.spam.timeoutDuration, // 1 minute vs 7 days
+                sameChannel: sameChannel
+            });
             return;
         }
     }
@@ -92,7 +99,7 @@ async function checkForSpam(message, userHistory) {
         );
         
         if (crossChannelMessages.length >= 3) {
-            await handleSpamDetection(message, 'cross_channel_spam', crossChannelMessages.length);
+            await handleSpamDetection(message, 'cross_channel_spam', crossChannelMessages.length, { timeoutDuration: config.spam.timeoutDuration });
             return;
         }
     }
@@ -100,34 +107,41 @@ async function checkForSpam(message, userHistory) {
     // Check for attachment spam
     const attachmentMessages = userHistory.filter(msg => msg.attachments > 0);
     if (attachmentMessages.length >= 4) {
-        await handleSpamDetection(message, 'attachment_spam', attachmentMessages.length);
+        // Check if all attachment messages are in the same channel
+        const sameChannel = attachmentMessages.every(msg => msg.channelId === message.channel.id);
+        
+        await handleSpamDetection(message, 'attachment_spam', attachmentMessages.length, { 
+            timeoutDuration: sameChannel ? 60000 : config.spam.timeoutDuration, // 1 minute vs 7 days
+            sameChannel: sameChannel
+        });
         return;
     }
 }
 
-async function handleSpamDetection(message, triggerType, count) {
+async function handleSpamDetection(message, triggerType, count, options = {}) {
     const userId = message.author.id;
+    const { timeoutDuration = config.spam.timeoutDuration, sameChannel = false } = options;
     
     try {
         // Add user to timeout set to prevent duplicate actions
         userTimeouts.add(userId);
         
-        // Timeout the user for 7 days
-        await message.member.timeout(config.spam.timeoutDuration, `Auto-moderation: ${triggerType} (${count} violations)`);
+        // Timeout the user with appropriate duration
+        await message.member.timeout(timeoutDuration, `Auto-moderation: ${triggerType} (${count} violations)`);
         
-        // Try to delete recent messages
+        // Enhanced message deletion - always delete past 5 messages for all spam types
         try {
             const userHistory = userMessageHistory.get(userId) || [];
-            const recentMessages = userHistory.slice(-5); // Last 5 messages
+            const messagesToDelete = userHistory.slice(-5); // Last 5 messages
             
-            for (const msgData of recentMessages) {
+            for (const msgData of messagesToDelete) {
                 try {
                     const channel = message.guild.channels.cache.get(msgData.channelId);
                     if (channel) {
                         const messages = await channel.messages.fetch({ limit: 50 });
                         const userMsg = messages.find(m => 
                             m.author.id === userId && 
-                            Math.abs(m.createdTimestamp - msgData.timestamp) < 5000
+                            Math.abs(m.createdTimestamp - msgData.timestamp) < 10000 // Increased window to 10 seconds
                         );
                         if (userMsg) {
                             await userMsg.delete();
@@ -137,29 +151,43 @@ async function handleSpamDetection(message, triggerType, count) {
                     console.log(`Could not delete message: ${deleteError.message}`);
                 }
             }
+            
+            // Also try to delete the triggering message
+            try {
+                await message.delete();
+            } catch (deleteError) {
+                console.log(`Could not delete triggering message: ${deleteError.message}`);
+            }
+            
         } catch (bulkDeleteError) {
             console.log(`Could not bulk delete messages: ${bulkDeleteError.message}`);
         }
         
+        // Format timeout duration for logging
+        const timeoutText = timeoutDuration === 60000 ? '1 minute timeout' : '7-day timeout';
+        const channelContext = sameChannel ? ' (same channel)' : ' (cross-channel)';
+        
         // Log the action
         await logAction('spam', {
             user: message.author,
-            action: `7-day timeout applied`,
+            action: `${timeoutText} applied`,
             messageCount: count,
             timeWindow: `${config.spam.timeWindow / 1000}s`,
             channel: message.channel,
-            trigger: triggerType
+            trigger: `${triggerType}${channelContext}`
         });
         
         // Clear user history
         userMessageHistory.delete(userId);
         
-        // Remove from timeout set after 1 minute to allow re-detection if needed
+        // Remove from timeout set after appropriate time
+        const cooldownTime = timeoutDuration === 60000 ? 70000 : 60000; // 70s for 1min timeout, 60s for 7d timeout
         setTimeout(() => {
             userTimeouts.delete(userId);
-        }, 60000);
+        }, cooldownTime);
         
-        console.log(`🔨 Auto-timed out user ${message.author.tag} for ${triggerType}`);
+        const actionText = timeoutDuration === 60000 ? 'timed out for 1 minute' : 'timed out for 7 days';
+        console.log(`🔨 Auto-${actionText} user ${message.author.tag} for ${triggerType}${channelContext}`);
         
     } catch (error) {
         console.error('❌ Error handling spam detection:', error);

@@ -17,11 +17,11 @@ An advanced Discord moderation bot with comprehensive anti-spam protection, auto
 
 ### 🛡️ Anti-Spam Protection
 
-- **Message Frequency Detection** - Automatically timeout users sending too many messages
-- **Identical Content Spam** - Detect and prevent repeated message spam
-- **Cross-Channel Spam** - Identify users spamming the same content across multiple channels
-- **Attachment Spam** - Monitor and prevent excessive attachment/image spam
-- **Auto-Timeout** - Automatically apply 7-day timeouts to violators
+- **Message Frequency Detection** - Automatically timeout users sending too many messages (7-day timeout)
+- **Identical Content Spam** - Detect repeated messages (1-minute timeout for same channel, 7-day for cross-channel)
+- **Cross-Channel Spam** - Identify users spamming the same content across multiple channels (7-day timeout)
+- **Attachment Spam** - Monitor excessive attachment/image uploads (1-minute timeout for same channel, 7-day for cross-channel)
+- **Smart Message Cleanup** - Automatically deletes last 5 messages from violators
 
 ### 🤖 Auto-Moderation
 
@@ -115,7 +115,7 @@ Generate an invite link with these permissions using the Discord Developer Porta
 | `BOT_TOKEN`             | Discord bot token                   | Required           |
 | `CLIENT_ID`             | Discord application client ID       | Required           |
 | `GUILD_ID`              | Target guild/server ID              | Required           |
-| `BOT_NAME`              | Display name for the bot            | Moderation Bot |
+| `BOT_NAME`              | Display name for the bot            | Moderation Bot     |
 | `BOT_AUTHOR`            | Bot creator name                    | -                  |
 | `LOGS_CHANNEL`          | Name of logs channel                | logs               |
 | `SPAM_MESSAGE_LIMIT`    | Messages before spam detection      | 5                  |
@@ -216,7 +216,7 @@ SimpleModerationBot/
 ### Banned Username Detection
 
 - Anti-Impersonation of Owner
-- Automatically detects users with configurable banned usernames 
+- Automatically detects users with configurable banned usernames
 - Applies ban immediately upon detection
 - Monitors username changes in real-time
 - Logs all actions for review
@@ -224,14 +224,14 @@ SimpleModerationBot/
 ### Anti-Spam Protection
 
 - **Multi-layered Detection**:
-  - Message frequency (5 messages in 10 seconds)
-  - Identical content repetition
-  - Cross-channel spam patterns
-  - Attachment/media spam
+  - Message frequency (5 messages in 10 seconds) → 7-day timeout
+  - Identical content repetition → 1-minute timeout (same channel) / 7-day timeout (cross-channel)
+  - Cross-channel spam patterns → 7-day timeout
+  - Attachment/media spam → 1-minute timeout (same channel) / 7-day timeout (cross-channel)
 - **Automatic Response**:
-  - 7-day timeout for violators
-  - Message deletion
-  - Comprehensive logging
+  - Smart timeout durations (1 minute or 7 days based on severity)
+  - Always deletes last 5 messages from violator
+  - Comprehensive logging with context
 - **Smart Filtering**:
   - Ignores bot messages
   - Skips users with moderation permissions
