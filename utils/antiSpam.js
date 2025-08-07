@@ -136,41 +136,87 @@ async function handleSpamDetection(message, triggerType, count, options = {}) {
             // Continue with message deletion even if timeout fails
         }
         
-        // Enhanced message deletion - always delete past 5 messages for all spam types
+        // Enhanced message deletion using bulk delete - delete last 10 messages for all spam types
         try {
             const userHistory = userMessageHistory.get(userId) || [];
-            const messagesToDelete = userHistory.slice(-5); // Last 5 messages
+            const messagesToDelete = userHistory.slice(-10); // Last 10 messages (increased from 5)
             
-            console.log(`🗑️ Attempting to delete ${messagesToDelete.length} messages for user ${message.author.tag}`);
+            console.log(`🗑️ Attempting to bulk delete messages for user ${message.author.tag}`);
             
+            // Group messages by channel for bulk deletion
+            const messagesByChannel = new Map();
+            
+            // Add triggering message to the list
+            if (!messagesByChannel.has(message.channel.id)) {
+                messagesByChannel.set(message.channel.id, []);
+            }
+            messagesByChannel.get(message.channel.id).push(message.id);
+            
+            // Group historical messages by channel
             for (const msgData of messagesToDelete) {
+                if (!messagesByChannel.has(msgData.channelId)) {
+                    messagesByChannel.set(msgData.channelId, []);
+                }
+                
                 try {
                     const channel = message.guild.channels.cache.get(msgData.channelId);
                     if (channel) {
-                        // Fetch more messages to ensure we find the target
+                        // Fetch recent messages to find the ones to delete
                         const messages = await channel.messages.fetch({ limit: 100 });
                         const userMsg = messages.find(m => 
                             m.author.id === userId && 
-                            Math.abs(m.createdTimestamp - msgData.timestamp) < 15000 // Increased window to 15 seconds
+                            Math.abs(m.createdTimestamp - msgData.timestamp) < 30000 // 30 second window
                         );
                         if (userMsg) {
-                            await userMsg.delete();
-                            console.log(`✅ Deleted message in #${channel.name}`);
-                        } else {
-                            console.log(`⚠️ Could not find message to delete in #${channel.name}`);
+                            messagesByChannel.get(msgData.channelId).push(userMsg.id);
                         }
                     }
-                } catch (deleteError) {
-                    console.log(`❌ Could not delete message: ${deleteError.message}`);
+                } catch (fetchError) {
+                    console.log(`❌ Could not fetch messages from channel: ${fetchError.message}`);
                 }
             }
             
-            // Also try to delete the triggering message
-            try {
-                await message.delete();
-                console.log(`✅ Deleted triggering message`);
-            } catch (deleteError) {
-                console.log(`❌ Could not delete triggering message: ${deleteError.message}`);
+            // Bulk delete messages in each channel
+            for (const [channelId, messageIds] of messagesByChannel) {
+                try {
+                    const channel = message.guild.channels.cache.get(channelId);
+                    if (channel && messageIds.length > 0) {
+                        // Remove duplicates and filter valid message IDs
+                        const uniqueMessageIds = [...new Set(messageIds)];
+                        
+                        if (uniqueMessageIds.length === 1) {
+                            // Single message - use regular delete
+                            const msg = await channel.messages.fetch(uniqueMessageIds[0]).catch(() => null);
+                            if (msg && msg.deletable) {
+                                await msg.delete();
+                                console.log(`✅ Deleted 1 message in #${channel.name}`);
+                            }
+                        } else if (uniqueMessageIds.length > 1) {
+                            // Multiple messages - use bulk delete (only works for messages less than 14 days old)
+                            const messagesToBulkDelete = [];
+                            for (const msgId of uniqueMessageIds) {
+                                try {
+                                    const msg = await channel.messages.fetch(msgId).catch(() => null);
+                                    if (msg && msg.deletable && (Date.now() - msg.createdTimestamp) < 14 * 24 * 60 * 60 * 1000) {
+                                        messagesToBulkDelete.push(msg);
+                                    }
+                                } catch (e) {
+                                    // Message might already be deleted or not accessible
+                                }
+                            }
+                            
+                            if (messagesToBulkDelete.length > 1) {
+                                await channel.bulkDelete(messagesToBulkDelete);
+                                console.log(`✅ Bulk deleted ${messagesToBulkDelete.length} messages in #${channel.name}`);
+                            } else if (messagesToBulkDelete.length === 1) {
+                                await messagesToBulkDelete[0].delete();
+                                console.log(`✅ Deleted 1 message in #${channel.name}`);
+                            }
+                        }
+                    }
+                } catch (deleteError) {
+                    console.log(`❌ Could not bulk delete in channel ${channelId}: ${deleteError.message}`);
+                }
             }
             
         } catch (bulkDeleteError) {
@@ -196,10 +242,11 @@ async function handleSpamDetection(message, triggerType, count, options = {}) {
         // Clear user history
         userMessageHistory.delete(userId);
         
-        // Remove from timeout set after appropriate time
-        const cooldownTime = timeoutDuration === 60000 ? 70000 : 60000; // 70s for 1min timeout, 60s for 7d timeout
+        // Remove from timeout set after shorter time to allow continued detection
+        const cooldownTime = 5000; // 5 seconds cooldown regardless of timeout duration
         setTimeout(() => {
             userTimeouts.delete(userId);
+            console.log(`🔄 Cooldown expired for ${message.author.tag} - spam detection re-enabled`);
         }, cooldownTime);
         
         const actionText = timeoutSuccess 

@@ -27,7 +27,7 @@ Made by [SohamXYZ](www.sohamxyz.com)
 - **Identical Content Spam** - Detect repeated messages (1-minute timeout for same channel, 7-day for cross-channel)
 - **Cross-Channel Spam** - Identify users spamming the same content across multiple channels (7-day timeout)
 - **Attachment Spam** - Monitor excessive attachment/image uploads (1-minute timeout for same channel, 7-day for cross-channel)
-- **Smart Message Cleanup** - Automatically deletes last 5 messages from violators
+- **Smart Message Cleanup** - Automatically bulk deletes last 10 messages from violators (more efficient than individual deletion)
 
 ### 🤖 Auto-Moderation
 
@@ -236,7 +236,7 @@ SimpleModerationBot/
   - Attachment/media spam → 1-minute timeout (same channel) / 7-day timeout (cross-channel)
 - **Automatic Response**:
   - Smart timeout durations (1 minute or 7 days based on severity)
-  - Always deletes last 5 messages from violator
+  - Always bulk deletes last 10 messages from violator (efficient purge-like deletion)
   - Comprehensive logging with context
 - **Smart Filtering**:
   - Ignores bot messages
