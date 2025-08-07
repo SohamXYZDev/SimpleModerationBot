@@ -6,7 +6,7 @@ An advanced Discord moderation bot with comprehensive anti-spam protection, auto
 
 ---
 
-Made by (SohamXYZ)[www.sohamxyz.com]
+Made by [SohamXYZ](www.sohamxyz.com)
 
 ## Features
 
