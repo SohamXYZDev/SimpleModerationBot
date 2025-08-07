@@ -1,6 +1,12 @@
 # A Simple (Yet Profound) Moderation Discord Bot
 
+---
+
 An advanced Discord moderation bot with comprehensive anti-spam protection, auto-moderation features, and detailed logging capabilities.
+
+---
+
+Made by (SohamXYZ)[www.sohamxyz.com]
 
 ## Features
 
