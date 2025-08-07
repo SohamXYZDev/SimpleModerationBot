@@ -136,91 +136,62 @@ async function handleSpamDetection(message, triggerType, count, options = {}) {
             // Continue with message deletion even if timeout fails
         }
         
-        // Enhanced message deletion using bulk delete - delete last 10 messages for all spam types
+        // Enhanced bulk message deletion - collect and delete ALL recent messages from user
         try {
-            const userHistory = userMessageHistory.get(userId) || [];
-            const messagesToDelete = userHistory.slice(-10); // Last 10 messages (increased from 5)
+            console.log(`🗑️ Attempting to bulk delete recent messages for user ${message.author.tag}`);
             
-            console.log(`🗑️ Attempting to bulk delete messages for user ${message.author.tag}`);
+            // Get all channels in the guild
+            const textChannels = message.guild.channels.cache.filter(channel => 
+                channel.type === 0 && // Text channel
+                channel.permissionsFor(message.guild.members.me).has(['ViewChannel', 'ReadMessageHistory', 'ManageMessages'])
+            );
             
-            // Group messages by channel for bulk deletion
-            const messagesByChannel = new Map();
+            let totalDeleted = 0;
             
-            // Add triggering message to the list
-            if (!messagesByChannel.has(message.channel.id)) {
-                messagesByChannel.set(message.channel.id, []);
-            }
-            messagesByChannel.get(message.channel.id).push(message.id);
-            
-            // Group historical messages by channel
-            for (const msgData of messagesToDelete) {
-                if (!messagesByChannel.has(msgData.channelId)) {
-                    messagesByChannel.set(msgData.channelId, []);
-                }
-                
+            // Process each channel (with rate limiting)
+            const channelArray = Array.from(textChannels.values());
+            for (let i = 0; i < channelArray.length; i++) {
+                const channel = channelArray[i];
                 try {
-                    const channel = message.guild.channels.cache.get(msgData.channelId);
-                    if (channel) {
-                        // Fetch recent messages to find the ones to delete
-                        const messages = await channel.messages.fetch({ limit: 100 });
-                        const userMsg = messages.find(m => 
-                            m.author.id === userId && 
-                            Math.abs(m.createdTimestamp - msgData.timestamp) < 30000 // 30 second window
-                        );
-                        if (userMsg) {
-                            messagesByChannel.get(msgData.channelId).push(userMsg.id);
-                        }
-                    }
-                } catch (fetchError) {
-                    console.log(`❌ Could not fetch messages from channel: ${fetchError.message}`);
-                }
-            }
-            
-            // Bulk delete messages in each channel
-            for (const [channelId, messageIds] of messagesByChannel) {
-                try {
-                    const channel = message.guild.channels.cache.get(channelId);
-                    if (channel && messageIds.length > 0) {
-                        // Remove duplicates and filter valid message IDs
-                        const uniqueMessageIds = [...new Set(messageIds)];
-                        
-                        if (uniqueMessageIds.length === 1) {
+                    // Fetch recent messages (last 100)
+                    const messages = await channel.messages.fetch({ limit: 100 });
+                    
+                    // Filter messages from the spam user (last 15 minutes to be safe)
+                    const userMessages = messages.filter(msg => 
+                        msg.author.id === userId && 
+                        (Date.now() - msg.createdTimestamp) < 15 * 60 * 1000 && // 15 minutes
+                        (Date.now() - msg.createdTimestamp) < 14 * 24 * 60 * 60 * 1000 && // Less than 14 days (Discord limit)
+                        msg.deletable
+                    );
+                    
+                    if (userMessages.size > 0) {
+                        if (userMessages.size === 1) {
                             // Single message - use regular delete
-                            const msg = await channel.messages.fetch(uniqueMessageIds[0]).catch(() => null);
-                            if (msg && msg.deletable) {
-                                await msg.delete();
-                                console.log(`✅ Deleted 1 message in #${channel.name}`);
-                            }
-                        } else if (uniqueMessageIds.length > 1) {
-                            // Multiple messages - use bulk delete (only works for messages less than 14 days old)
-                            const messagesToBulkDelete = [];
-                            for (const msgId of uniqueMessageIds) {
-                                try {
-                                    const msg = await channel.messages.fetch(msgId).catch(() => null);
-                                    if (msg && msg.deletable && (Date.now() - msg.createdTimestamp) < 14 * 24 * 60 * 60 * 1000) {
-                                        messagesToBulkDelete.push(msg);
-                                    }
-                                } catch (e) {
-                                    // Message might already be deleted or not accessible
-                                }
-                            }
-                            
-                            if (messagesToBulkDelete.length > 1) {
-                                await channel.bulkDelete(messagesToBulkDelete);
-                                console.log(`✅ Bulk deleted ${messagesToBulkDelete.length} messages in #${channel.name}`);
-                            } else if (messagesToBulkDelete.length === 1) {
-                                await messagesToBulkDelete[0].delete();
-                                console.log(`✅ Deleted 1 message in #${channel.name}`);
-                            }
+                            await userMessages.first().delete();
+                            totalDeleted += 1;
+                            console.log(`✅ Deleted 1 message in #${channel.name}`);
+                        } else {
+                            // Multiple messages - use bulk delete
+                            const deleted = await channel.bulkDelete(userMessages, true);
+                            totalDeleted += deleted.size;
+                            console.log(`✅ Bulk deleted ${deleted.size} messages in #${channel.name}`);
                         }
                     }
-                } catch (deleteError) {
-                    console.log(`❌ Could not bulk delete in channel ${channelId}: ${deleteError.message}`);
+                    
+                    // Small delay to prevent rate limiting (only if more channels to process)
+                    if (i < channelArray.length - 1 && totalDeleted > 0) {
+                        await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay
+                    }
+                    
+                } catch (channelError) {
+                    console.log(`❌ Could not process channel #${channel.name}: ${channelError.message}`);
                 }
             }
+            
+            console.log(`🎯 Total messages deleted: ${totalDeleted}`);
             
         } catch (bulkDeleteError) {
-            console.log(`Could not bulk delete messages: ${bulkDeleteError.message}`);
+            console.log(`❌ Error in bulk delete process: ${bulkDeleteError.message}`);
         }
         
         // Format timeout duration for logging
