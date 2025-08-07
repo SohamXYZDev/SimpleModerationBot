@@ -1,0 +1,24 @@
+{
+  "name": "mmm-moderation-bot",
+  "version": "1.0.0",
+  "description": "An advanced Discord moderation bot with anti-spam, auto-moderation, and comprehensive logging features",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "deploy": "node deploy-commands.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": ["discord", "bot", "moderation", "anti-spam"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=16.9.0"
+  }
+}
