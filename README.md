@@ -82,6 +82,11 @@ Made by [SohamXYZ](www.sohamxyz.com)
    BOT_NAME=Moderation Bot
    BOT_AUTHOR=Your Name Here
    BOT_ACTIVITY=for spam and rule violations
+
+   # Optional: Customize embed colors (hex without #)
+   BOT_COLOR_INFO=5e677e
+   BOT_COLOR_SUCCESS=00ff00
+   BOT_COLOR_ERROR=ff0000
    ```
 
 4. **Deploy Commands to Your Guild**
@@ -118,20 +123,25 @@ Generate an invite link with these permissions using the Discord Developer Porta
 
 ### Environment Variables
 
-| Variable                | Description                         | Default            |
-| ----------------------- | ----------------------------------- | ------------------ |
-| `BOT_TOKEN`             | Discord bot token                   | Required           |
-| `CLIENT_ID`             | Discord application client ID       | Required           |
-| `GUILD_ID`              | Target guild/server ID              | Required           |
-| `BOT_NAME`              | Display name for the bot            | Moderation Bot     |
-| `BOT_AUTHOR`            | Bot creator name                    | -                  |
-| `BOT_ACTIVITY`          | Bot activity status text            | for violations     |
-| `LOGS_CHANNEL`          | Name of logs channel                | logs               |
-| `SPAM_MESSAGE_LIMIT`    | Messages before spam detection      | 5                  |
-| `SPAM_TIME_WINDOW`      | Time window for spam detection (ms) | 10000              |
-| `AUTO_TIMEOUT_DURATION` | Auto-timeout duration (ms)          | 604800000 (7 days) |
-| `BANNED_USERNAME`       | Username to auto-ban                | Owner              |
-| `BAN_BANNED_USERNAME`   | Enable auto-ban for banned username | true               |
+| Variable                | Description                            | Default            |
+| ----------------------- | -------------------------------------- | ------------------ |
+| `BOT_TOKEN`             | Discord bot token                      | Required           |
+| `CLIENT_ID`             | Discord application client ID          | Required           |
+| `GUILD_ID`              | Target guild/server ID                 | Required           |
+| `BOT_NAME`              | Display name for the bot               | Moderation Bot     |
+| `BOT_AUTHOR`            | Bot creator name                       | -                  |
+| `BOT_ACTIVITY`          | Bot activity status text               | for violations     |
+| `BOT_COLOR_SUCCESS`     | Success embed color (hex without #)    | 00ff00             |
+| `BOT_COLOR_ERROR`       | Error embed color (hex without #)      | ff0000             |
+| `BOT_COLOR_WARNING`     | Warning embed color (hex without #)    | ffff00             |
+| `BOT_COLOR_INFO`        | Info embed color (hex without #)       | 0099ff             |
+| `BOT_COLOR_MODERATION`  | Moderation embed color (hex without #) | ff6600             |
+| `LOGS_CHANNEL`          | Name of logs channel                   | logs               |
+| `SPAM_MESSAGE_LIMIT`    | Messages before spam detection         | 5                  |
+| `SPAM_TIME_WINDOW`      | Time window for spam detection (ms)    | 10000              |
+| `AUTO_TIMEOUT_DURATION` | Auto-timeout duration (ms)             | 604800000 (7 days) |
+| `BANNED_USERNAME`       | Username to auto-ban                   | Owner              |
+| `BAN_BANNED_USERNAME`   | Enable auto-ban for banned username    | true               |
 
 ### Anti-Spam Settings
 
@@ -140,6 +150,18 @@ The anti-spam system can be configured through environment variables:
 - **Message Limit**: Number of messages in time window before action
 - **Time Window**: Time period to monitor (milliseconds)
 - **Timeout Duration**: How long to timeout violators
+
+### Color Customization
+
+Customize all embed colors through environment variables:
+
+- **BOT_COLOR_SUCCESS**: Success messages (default: 00ff00 - green)
+- **BOT_COLOR_ERROR**: Error messages (default: ff0000 - red)
+- **BOT_COLOR_WARNING**: Warning messages (default: ffff00 - yellow)
+- **BOT_COLOR_INFO**: Information messages (default: 0099ff - blue)
+- **BOT_COLOR_MODERATION**: Moderation actions (default: ff6600 - orange)
+
+Colors should be specified as hex values without the # symbol (e.g., `5e677e` for a custom blue-gray).
 
 ## Commands
 

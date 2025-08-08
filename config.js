@@ -29,13 +29,13 @@ module.exports = {
     // Bot Permissions
     requiredPermissions: process.env.REQUIRED_PERMISSIONS || '8', // Administrator
     
-    // Colors for embeds
+    // Colors for embeds (configurable via environment variables)
     colors: {
-        success: 0x00FF00,
-        error: 0xFF0000,
-        warning: 0xFFFF00,
-        info: 0x0099FF,
-        moderation: 0xFF6600
+        success: parseInt(process.env.BOT_COLOR_SUCCESS || '00ff00', 16),
+        error: parseInt(process.env.BOT_COLOR_ERROR || 'ff0000', 16),
+        warning: parseInt(process.env.BOT_COLOR_WARNING || 'ffff00', 16),
+        info: parseInt(process.env.BOT_COLOR_INFO || '0099ff', 16),
+        moderation: parseInt(process.env.BOT_COLOR_MODERATION || 'ff6600', 16)
     },
     
     // Emojis
