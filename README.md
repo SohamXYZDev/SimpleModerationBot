@@ -77,9 +77,10 @@ Made by [SohamXYZ](www.sohamxyz.com)
    CLIENT_ID=your_client_id_here
    GUILD_ID=your_guild_id_here
 
-   # Optional: Customize bot identity
+   # Optional: Customize bot identity and activity
    BOT_NAME=Moderation Bot
    BOT_AUTHOR=Your Name Here
+   BOT_ACTIVITY=for spam and rule violations
    ```
 
 4. **Deploy Commands to Your Guild**
@@ -123,6 +124,7 @@ Generate an invite link with these permissions using the Discord Developer Porta
 | `GUILD_ID`              | Target guild/server ID              | Required           |
 | `BOT_NAME`              | Display name for the bot            | Moderation Bot     |
 | `BOT_AUTHOR`            | Bot creator name                    | -                  |
+| `BOT_ACTIVITY`          | Bot activity status text            | for violations     |
 | `LOGS_CHANNEL`          | Name of logs channel                | logs               |
 | `SPAM_MESSAGE_LIMIT`    | Messages before spam detection      | 5                  |
 | `SPAM_TIME_WINDOW`      | Time window for spam detection (ms) | 10000              |

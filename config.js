@@ -10,6 +10,7 @@ module.exports = {
     botName: process.env.BOT_NAME || 'MMM Moderation Bot',
     botVersion: process.env.BOT_VERSION || '1.0.0',
     botAuthor: process.env.BOT_AUTHOR || 'Unknown',
+    botActivity: process.env.BOT_ACTIVITY || 'for violations',
     
     // Channel Configuration
     logsChannel: process.env.LOGS_CHANNEL || 'logs',
