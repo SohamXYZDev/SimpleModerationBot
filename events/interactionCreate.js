@@ -55,13 +55,12 @@ module.exports = {
                     // Get the category help embed
                     const embed = await getCategoryHelp(selectedCategory, interaction);
                     
-                    await interaction.reply({ embeds: [embed], ephemeral: true });
+                    await interaction.reply({ embeds: [embed] });
                     
                 } catch (error) {
                     console.error('Error handling help category selection:', error);
                     await interaction.reply({
-                        content: '❌ Failed to load help category information.',
-                        ephemeral: true
+                        content: '❌ Failed to load help category information.'
                     });
                 }
             }
