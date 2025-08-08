@@ -42,8 +42,29 @@ module.exports = {
         
         // Handle select menu interactions
         else if (interaction.isStringSelectMenu()) {
-            // Handle select menu interactions here if needed
             console.log(`📋 ${interaction.user.tag} used select menu: ${interaction.customId}`);
+            
+            // Handle help category selection
+            if (interaction.customId === 'help_category_select') {
+                const selectedCategory = interaction.values[0];
+                
+                try {
+                    // Import the help command module to use its helper function
+                    const { getCategoryHelp } = require('../commands/utility/help.js');
+                    
+                    // Get the category help embed
+                    const embed = await getCategoryHelp(selectedCategory, interaction);
+                    
+                    await interaction.reply({ embeds: [embed], ephemeral: true });
+                    
+                } catch (error) {
+                    console.error('Error handling help category selection:', error);
+                    await interaction.reply({
+                        content: '❌ Failed to load help category information.',
+                        ephemeral: true
+                    });
+                }
+            }
         }
     },
 };

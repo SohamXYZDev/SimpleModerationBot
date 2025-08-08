@@ -41,6 +41,7 @@ Made by [SohamXYZ](www.sohamxyz.com)
 - **Server Info** - Comprehensive server statistics and information
 - **Bot Info** - Bot status, uptime, and system information
 - **Anti-Spam Status** - Monitor and manage anti-spam system settings
+- **Interactive Help System** - Comprehensive help with categorized command documentation and dropdown navigation
 
 ### 📝 Logging System
 
@@ -161,6 +162,35 @@ The anti-spam system can be configured through environment variables:
 - `/serverinfo` - Get server information
 - `/botinfo` - Get bot information
 - `/antispam status/reset` - Manage anti-spam system
+- `/help [category]` - Interactive help system with detailed command documentation
+
+## Interactive Help System
+
+The bot features a comprehensive help system accessible via `/help` command:
+
+### 🎯 **Main Features**
+
+- **Interactive Dropdown Menu** - Select categories from an easy-to-use dropdown
+- **Categorized Documentation** - Commands organized by type for easy navigation
+- **Detailed Explanations** - Complete usage examples and parameter descriptions
+- **Real-time Information** - Always up-to-date with current bot configuration
+
+### 📚 **Available Categories**
+
+- **🔨 Moderation Commands** - Complete guide to all moderation tools
+- **📊 Utility Commands** - Information and diagnostic commands
+- **🛡️ Anti-Spam System** - Detailed spam detection and prevention guide
+- **🤖 Auto-Moderation** - Automated protection features explanation
+- **⚙️ Configuration** - Environment variables and setup guide
+
+### 💡 **Usage Examples**
+
+```
+/help                    # Main help menu with dropdown selection
+/help moderation         # Direct access to moderation commands
+/help antispam          # Learn about anti-spam features
+/help config            # Environment setup guide
+```
 
 ## File Structure
 
@@ -182,7 +212,8 @@ SimpleModerationBot/
 │       ├── userinfo.js
 │       ├── serverinfo.js
 │       ├── botinfo.js
-│       └── antispam.js
+│       ├── antispam.js
+│       └── help.js         # Interactive help system
 ├── events/                  # Event handlers
 │   ├── ready.js
 │   └── interactionCreate.js
