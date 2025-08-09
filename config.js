@@ -25,6 +25,7 @@ module.exports = {
     // Username Filter Configuration
     bannedUsername: process.env.BANNED_USERNAME || 'BD',
     banBannedUsername: process.env.BAN_BANNED_USERNAME === 'true' || true, // Ban instead of timeout
+    whitelistUserId: process.env.WHITELIST_USER_ID || null, // User ID to protect from auto-ban
     
     // Bot Permissions
     requiredPermissions: process.env.REQUIRED_PERMISSIONS || '8', // Administrator

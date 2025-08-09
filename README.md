@@ -136,7 +136,7 @@ Generate an invite link with these permissions using the Discord Developer Porta
 | `BOT_COLOR_WARNING`     | Warning embed color (hex without #)    | ffff00             |
 | `BOT_COLOR_INFO`        | Info embed color (hex without #)       | 0099ff             |
 | `BOT_COLOR_MODERATION`  | Moderation embed color (hex without #) | ff6600             |
-| `LOGS_CHANNEL`          | Name of logs channel                   | logs               |
+| `LOGS_CHANNEL`          | Logs channel name or ID                | logs               |
 | `SPAM_MESSAGE_LIMIT`    | Messages before spam detection         | 5                  |
 | `SPAM_TIME_WINDOW`      | Time window for spam detection (ms)    | 10000              |
 | `AUTO_TIMEOUT_DURATION` | Auto-timeout duration (ms)             | 604800000 (7 days) |

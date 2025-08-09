@@ -7,19 +7,31 @@ function initializeAutoModeration(client) {
         try {
             // Check for banned username
             if (member.displayName.toLowerCase() === config.bannedUsername.toLowerCase()) {
-                await member.ban({ 
-                    reason: `Auto-moderation: Display name "${config.bannedUsername}" detected`,
-                    deleteMessageDays: 1 
-                });
-                
-                await logAction('automod', {
-                    action: 'Permanent ban applied',
-                    user: member.user,
-                    trigger: 'Banned Username Detection',
-                    details: `New member with display name "${config.bannedUsername}" automatically banned`
-                });
-                
-                console.log(`🔨 Auto-banned new member ${member.user.tag} for banned username: ${config.bannedUsername}`);
+                // Check if user is whitelisted (protected from auto-ban)
+                if (config.whitelistUserId && member.user.id === config.whitelistUserId) {
+                    await logAction('automod', {
+                        action: 'Whitelist protection applied',
+                        user: member.user,
+                        trigger: 'Banned Username Detection (Protected)',
+                        details: `Whitelisted user "${config.bannedUsername}" joined - auto-ban skipped`
+                    });
+                    
+                    console.log(`🛡️ Protected whitelisted user ${member.user.tag} from auto-ban (ID: ${member.user.id})`);
+                } else {
+                    await member.ban({ 
+                        reason: `Auto-moderation: Display name "${config.bannedUsername}" detected`,
+                        deleteMessageDays: 1 
+                    });
+                    
+                    await logAction('automod', {
+                        action: 'Permanent ban applied',
+                        user: member.user,
+                        trigger: 'Banned Username Detection',
+                        details: `New member with display name "${config.bannedUsername}" automatically banned`
+                    });
+                    
+                    console.log(`🔨 Auto-banned new member ${member.user.tag} for banned username: ${config.bannedUsername}`);
+                }
             }
             
             // Log member join
@@ -46,19 +58,31 @@ function initializeAutoModeration(client) {
             if (oldMember.displayName.toLowerCase() !== config.bannedUsername.toLowerCase() && 
                 newMember.displayName.toLowerCase() === config.bannedUsername.toLowerCase()) {
                 
-                await newMember.ban({ 
-                    reason: `Auto-moderation: Display name changed to "${config.bannedUsername}"`,
-                    deleteMessageDays: 1 
-                });
-                
-                await logAction('automod', {
-                    action: 'Permanent ban applied',
-                    user: newMember.user,
-                    trigger: 'Banned Username Change',
-                    details: `Member changed display name to "${config.bannedUsername}" and was automatically banned`
-                });
-                
-                console.log(`🔨 Auto-banned member ${newMember.user.tag} for changing display name to ${config.bannedUsername}`);
+                // Check if user is whitelisted (protected from auto-ban)
+                if (config.whitelistUserId && newMember.user.id === config.whitelistUserId) {
+                    await logAction('automod', {
+                        action: 'Whitelist protection applied',
+                        user: newMember.user,
+                        trigger: 'Banned Username Change (Protected)',
+                        details: `Whitelisted user changed display name to "${config.bannedUsername}" - auto-ban skipped`
+                    });
+                    
+                    console.log(`🛡️ Protected whitelisted user ${newMember.user.tag} from auto-ban (ID: ${newMember.user.id})`);
+                } else {
+                    await newMember.ban({ 
+                        reason: `Auto-moderation: Display name changed to "${config.bannedUsername}"`,
+                        deleteMessageDays: 1 
+                    });
+                    
+                    await logAction('automod', {
+                        action: 'Permanent ban applied',
+                        user: newMember.user,
+                        trigger: 'Banned Username Change',
+                        details: `Member changed display name to "${config.bannedUsername}" and was automatically banned`
+                    });
+                    
+                    console.log(`🔨 Auto-banned member ${newMember.user.tag} for changing display name to ${config.bannedUsername}`);
+                }
             }
         } catch (error) {
             console.error('❌ Error in auto-moderation (member update):', error);

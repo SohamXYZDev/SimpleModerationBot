@@ -8,13 +8,14 @@ function initializeLogger(client) {
         try {
             const guild = client.guilds.cache.get(config.guildId);
             if (guild) {
-                // Try to find existing logs channel
-                logChannel = guild.channels.cache.find(channel => 
-                    channel.name === config.logsChannel && channel.type === 0
-                );
+                // Try to find existing logs channel by ID or name
+                logChannel = guild.channels.cache.get(config.logsChannel) || 
+                            guild.channels.cache.find(channel => 
+                                channel.name === config.logsChannel && channel.type === 0
+                            );
                 
-                // If no logs channel exists, create one
-                if (!logChannel) {
+                // If no logs channel exists and config value looks like a name (not ID), create one
+                if (!logChannel && isNaN(config.logsChannel)) {
                     logChannel = await guild.channels.create({
                         name: config.logsChannel,
                         type: 0, // Text channel
@@ -28,8 +29,10 @@ function initializeLogger(client) {
                         ]
                     });
                     console.log(`📝 Created logs channel: #${logChannel.name}`);
+                } else if (logChannel) {
+                    console.log(`📝 Found existing logs channel: #${logChannel.name} (ID: ${logChannel.id})`);
                 } else {
-                    console.log(`📝 Found existing logs channel: #${logChannel.name}`);
+                    console.error(`❌ Could not find logs channel with ID: ${config.logsChannel}`);
                 }
             }
         } catch (error) {

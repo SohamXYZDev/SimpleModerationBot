@@ -185,7 +185,7 @@ async function getCategoryHelp(category, interaction) {
                     },
                     {
                         name: '🔒 Auto-Moderation',
-                        value: '• `BANNED_USERNAME`: Username to auto-ban (default: "BD")\n• `BAN_BANNED_USERNAME`: Enable auto-ban (default: true)\n• `LOGS_CHANNEL`: Logs channel name (default: "logs")',
+                        value: '• `BANNED_USERNAME`: Username to auto-ban (default: "BD")\n• `BAN_BANNED_USERNAME`: Enable auto-ban (default: true)\n• `LOGS_CHANNEL`: Logs channel name or ID (default: "logs")',
                         inline: false
                     },
                     {
