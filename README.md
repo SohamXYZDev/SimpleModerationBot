@@ -335,6 +335,15 @@ To update the bot:
 
 This project is licensed under the MIT License - see the package.json file for details.
 
+## Socials
+
+Created & maintained by Soham Mitra (SohamXYZ)
+
+- 🌐 Website: [https://sohamxyz.com](https://sohamxyz.com)
+- 📧 Email: soham@sohamxyz.com
+- 💬 Discord: sohamxyz
+- 🧠 discord bot/automation inquiries welcome!
+
 ## Contributing
 
 Feel free to submit issues, feature requests, or pull requests to improve the bot.
