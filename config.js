@@ -14,6 +14,11 @@ module.exports = {
     
     // Channel Configuration
     logsChannel: process.env.LOGS_CHANNEL || 'logs',
+    // Automod Bypass Roles (comma-separated role IDs)
+    automodBypassRoles: (process.env.AUTOMOD_BYPASS_ROLES || '')
+        .split(',')
+        .map(r => r.trim())
+        .filter(Boolean),
     
     // Anti-Spam Configuration
     spam: {

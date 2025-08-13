@@ -10,7 +10,34 @@ function initializeAntiSpam(client) {
         // Ignore bots and system messages
         if (message.author.bot || message.system) return;
         
-        // Note: Removed permission check - anti-spam now works on everyone including admins
+        // Bypass for admins or members with bypass roles
+        const member = message.member;
+        const isAdmin = member && (
+            member.permissions.has('Administrator') || 
+            member.permissions.has('ManageGuild') ||
+            member.permissions.has('ManageMessages')
+        );
+        const hasBypassRole = member && config.automodBypassRoles.length > 0 && member.roles.cache.some(r => config.automodBypassRoles.includes(r.id));
+        const bypass = isAdmin || hasBypassRole;
+        
+        // Keyword censor: delete messages containing invite links (non-admins/non-bypass only)
+        if (!bypass && typeof message.content === 'string' && message.content.toLowerCase().includes('discord.gg')) {
+            try {
+                await message.delete();
+                await logAction('automod', {
+                    action: 'Message deleted',
+                    user: message.author,
+                    trigger: 'Invite link censor',
+                    details: `Deleted message containing discord.gg in #${message.channel.name}`
+                });
+            } catch (e) {
+                // ignore
+            }
+            return; // stop further processing for this message
+        }
+        
+        // If bypass, do not run spam checks
+        if (bypass) return;
         
         const userId = message.author.id;
         const currentTime = Date.now();
@@ -64,11 +91,8 @@ async function checkForSpam(message, userHistory) {
     // Skip if user is already timed out
     if (userTimeouts.has(userId)) return;
     
-    // Check message frequency
-    if (userHistory.length >= config.spam.messageLimit) {
-        await handleSpamDetection(message, 'message_frequency', userHistory.length, { timeoutDuration: config.spam.timeoutDuration });
-        return;
-    }
+    // Remove punishment for non-identical message spam: disable generic frequency punishment
+    // (Keep only identical, cross-channel identical, and attachment spam rules)
     
     // Check for identical content spam
     const recentMessages = userHistory.slice(-3);
@@ -98,7 +122,7 @@ async function checkForSpam(message, userHistory) {
         );
         
         if (crossChannelMessages.length >= 3) {
-            await handleSpamDetection(message, 'cross_channel_spam', crossChannelMessages.length, { timeoutDuration: config.spam.timeoutDuration });
+            await handleSpamDetection(message, 'cross_channel_identical', crossChannelMessages.length, { timeoutDuration: config.spam.timeoutDuration });
             return;
         }
     }

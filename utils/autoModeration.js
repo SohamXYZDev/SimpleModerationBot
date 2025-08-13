@@ -5,8 +5,9 @@ function initializeAutoModeration(client) {
     // Handle new member joins
     client.on('guildMemberAdd', async (member) => {
         try {
-            // Check for banned username
-            if (member.displayName.toLowerCase() === config.bannedUsername.toLowerCase()) {
+            // Check for banned username (respect automod bypass)
+            const hasBypassRole = member.roles.cache.some(r => config.automodBypassRoles && config.automodBypassRoles.includes(r.id));
+            if (!hasBypassRole && member.displayName.toLowerCase() === config.bannedUsername.toLowerCase()) {
                 // Check if user is whitelisted (protected from auto-ban)
                 if (config.whitelistUserId && member.user.id === config.whitelistUserId) {
                     await logAction('automod', {
@@ -55,8 +56,9 @@ function initializeAutoModeration(client) {
     // Handle member updates (nickname/username changes)
     client.on('guildMemberUpdate', async (oldMember, newMember) => {
         try {
-            // Check if display name changed to banned username
-            if (oldMember.displayName.toLowerCase() !== config.bannedUsername.toLowerCase() && 
+            // Check if display name changed to banned username (respect automod bypass)
+            const hasBypassRole = newMember.roles.cache.some(r => config.automodBypassRoles && config.automodBypassRoles.includes(r.id));
+            if (!hasBypassRole && oldMember.displayName.toLowerCase() !== config.bannedUsername.toLowerCase() && 
                 newMember.displayName.toLowerCase() === config.bannedUsername.toLowerCase()) {
                 
                 // Check if user is whitelisted (protected from auto-ban)
