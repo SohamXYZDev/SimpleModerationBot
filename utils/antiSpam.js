@@ -20,20 +20,24 @@ function initializeAntiSpam(client) {
         const hasBypassRole = member && config.automodBypassRoles.length > 0 && member.roles.cache.some(r => config.automodBypassRoles.includes(r.id));
         const bypass = isAdmin || hasBypassRole;
         
-        // Keyword censor: delete messages containing invite links (non-admins/non-bypass only)
-        if (!bypass && typeof message.content === 'string' && message.content.toLowerCase().includes('discord.gg')) {
-            try {
-                await message.delete();
-                await logAction('automod', {
-                    action: 'Message deleted',
-                    user: message.author,
-                    trigger: 'Invite link censor',
-                    details: `Deleted message containing discord.gg in #${message.channel.name}`
-                });
-            } catch (e) {
-                // ignore
+        // Keyword censor: delete messages containing any banned keyword (non-admins/non-bypass only)
+        if (!bypass && typeof message.content === 'string' && config.censorKeywords.length > 0) {
+            const contentLower = message.content.toLowerCase();
+            const found = config.censorKeywords.find(keyword => contentLower.includes(keyword));
+            if (found) {
+                try {
+                    await message.delete();
+                    await logAction('automod', {
+                        action: 'Message deleted',
+                        user: message.author,
+                        trigger: 'Keyword censor',
+                        details: `Deleted message containing banned keyword (${found}) in #${message.channel.name}`
+                    });
+                } catch (e) {
+                    // ignore
+                }
+                return; // stop further processing for this message
             }
-            return; // stop further processing for this message
         }
         
         // If bypass, do not run spam checks

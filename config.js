@@ -19,6 +19,12 @@ module.exports = {
         .split(',')
         .map(r => r.trim())
         .filter(Boolean),
+
+    // Censor Keywords (comma-separated)
+    censorKeywords: (process.env.CENSOR_KEYWORDS || '')
+        .split(',')
+        .map(w => w.trim().toLowerCase())
+        .filter(Boolean),
     
     // Anti-Spam Configuration
     spam: {
