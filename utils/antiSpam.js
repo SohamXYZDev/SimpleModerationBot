@@ -40,6 +40,25 @@ function initializeAntiSpam(client) {
             }
         }
         
+        // Textwall detection: delete messages with 3+ newlines (non-admins/non-bypass only)
+        if (!bypass && typeof message.content === 'string') {
+            const newlineCount = (message.content.match(/\n/g) || []).length;
+            if (newlineCount >= 3) {
+                try {
+                    await message.delete();
+                    await logAction('automod', {
+                        action: 'Message deleted',
+                        user: message.author,
+                        trigger: 'Textwall detection',
+                        details: `Deleted message with ${newlineCount} newlines in #${message.channel.name}`
+                    });
+                } catch (e) {
+                    // ignore
+                }
+                return; // stop further processing for this message
+            }
+        }
+        
         // If bypass, do not run spam checks
         if (bypass) return;
         
