@@ -4,8 +4,19 @@ const { logAction } = require('./logger.js');
 // Store user message history for spam detection
 const userMessageHistory = new Map();
 const userTimeouts = new Set();
+// Track new member join times (userId -> joinTimestamp)
+const newMemberJoinTimes = new Map();
 
 function initializeAntiSpam(client) {
+    // Track new member joins for attachment restriction
+    client.on('guildMemberAdd', (member) => {
+        newMemberJoinTimes.set(member.user.id, Date.now());
+        // Clean up after 30 minutes
+        setTimeout(() => {
+            newMemberJoinTimes.delete(member.user.id);
+        }, 30 * 60 * 1000);
+    });
+
     client.on('messageCreate', async (message) => {
         // Ignore bots and system messages
         if (message.author.bot || message.system) return;
@@ -19,6 +30,25 @@ function initializeAntiSpam(client) {
         );
         const hasBypassRole = member && config.automodBypassRoles.length > 0 && member.roles.cache.some(r => config.automodBypassRoles.includes(r.id));
         const bypass = isAdmin || hasBypassRole;
+        
+        // New member attachment restriction: delete messages with attachments from users who joined within 30 minutes
+        if (!bypass && message.attachments.size > 0) {
+            const joinTime = newMemberJoinTimes.get(message.author.id);
+            if (joinTime && (Date.now() - joinTime) < 30 * 60 * 1000) {
+                try {
+                    await message.delete();
+                    await logAction('automod', {
+                        action: 'Message deleted',
+                        user: message.author,
+                        trigger: 'New member attachment restriction',
+                        details: `Deleted message with ${message.attachments.size} attachment(s) from new member in #${message.channel.name}`
+                    });
+                } catch (e) {
+                    // ignore
+                }
+                return; // stop further processing for this message
+            }
+        }
         
         // Keyword censor: delete messages containing any banned keyword (non-admins/non-bypass only)
         if (!bypass && typeof message.content === 'string' && config.censorKeywords.length > 0) {
