@@ -70,6 +70,16 @@ function initializeAntiSpam(client) {
             }
         }
         
+        // Scam message detection: specific banned phrases
+        if (!bypass && typeof message.content === 'string') {
+            const contentLower = message.content.toLowerCase();
+            const scamPhrase = "i'll help first 10 interested people on how to start earning";
+            if (contentLower.includes(scamPhrase)) {
+                await handleSpamDetection(message, 'scam_message', 1, { timeoutDuration: config.spam.timeoutDuration });
+                return; // stop further processing for this message
+            }
+        }
+        
         // Textwall detection: delete messages with 3+ newlines (non-admins/non-bypass only)
         if (!bypass && typeof message.content === 'string') {
             const newlineCount = (message.content.match(/\n/g) || []).length;
